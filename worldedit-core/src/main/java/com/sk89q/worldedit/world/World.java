@@ -170,6 +170,15 @@ public interface World extends Extent, Keyed {
     boolean regenerate(Region region, EditSession editSession);
 
     /**
+     * Regenerate an area's biome information.
+     *
+     * @param region the region
+     * @param editSession the {@link EditSession}
+     * @return true if re-generation was successful
+     */
+    boolean regenerateBiome(Region region, EditSession editSession);
+
+    /**
      * Generate a tree at the given position.
      *
      * @param type the tree type

@@ -189,6 +189,21 @@ public class BukkitWorld extends AbstractWorld {
             return false;
         }
     }
+    
+    @Override
+    public boolean regenerateBiome(Region region, EditSession editSession) {
+        BukkitImplAdapter adapter = WorldEditPlugin.getInstance().getBukkitImplAdapter();
+        try {
+            if (adapter != null) {
+                return adapter.regenerateBiome(getWorld(), region, editSession);
+            } else {
+                throw new UnsupportedOperationException("Missing BukkitImplAdapater for this version.");
+            }
+        } catch (Exception e) {
+            logger.warn("Biome regeneration via adapter failed.", e);
+            return false;
+        }
+    }
 
     /**
      * Gets the single block inventory for a potentially double chest.

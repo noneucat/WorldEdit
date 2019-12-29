@@ -363,6 +363,47 @@ public class ForgeWorld extends AbstractWorld {
         return true;
     }
 
+    @Override
+    public boolean regenerateBiome(Region region, EditSession editSession) {
+        // Don't even try to regen if it's going to fail.
+        AbstractChunkProvider provider = getWorld().getChunkProvider();
+        if (!(provider instanceof ServerChunkProvider)) {
+            return false;
+        }
+
+        File saveFolder = Files.createTempDir();
+        // register this just in case something goes wrong
+        // normally it should be deleted at the end of this method
+        saveFolder.deleteOnExit();
+        try {
+            ServerWorld originalWorld = (ServerWorld) getWorld();
+
+            MinecraftServer server = originalWorld.getServer();
+            SaveHandler saveHandler = new SaveHandler(saveFolder, originalWorld.getSaveHandler().getWorldDirectory().getName(), server, server.getDataFixer());
+            try (World freshWorld = new ServerWorld(server, server.getBackgroundExecutor(), saveHandler, originalWorld.getWorldInfo(),
+                    originalWorld.dimension.getType(), originalWorld.getProfiler(), new NoOpChunkStatusListener())) {
+
+                // Pre-gen all the chunks
+                // We need to also pull one more chunk in every direction
+                CuboidRegion expandedPreGen = new CuboidRegion(region.getMinimumPoint().subtract(16, 0, 16), region.getMaximumPoint().add(16, 0, 16));
+                for (BlockVector2 chunk : expandedPreGen.getChunks()) {
+                    freshWorld.getChunk(chunk.getBlockX(), chunk.getBlockZ());
+                }
+
+                ForgeWorld from = new ForgeWorld(freshWorld);
+                for (BlockVector3 vec : region) {
+                    editSession.setBiome(BlockVector2.at(vec.getX(), vec.getZ()), from.getBiome(BlockVector2.at(vec.getX(), vec.getZ())));
+                }
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        } finally {
+            saveFolder.delete();
+        }
+
+        return true;
+    }
+
     @Nullable
     private static Feature<? extends IFeatureConfig> createTreeFeatureGenerator(TreeType type) {
         switch (type) {

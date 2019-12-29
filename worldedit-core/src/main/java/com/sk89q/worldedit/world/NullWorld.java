@@ -110,6 +110,11 @@ public class NullWorld extends AbstractWorld {
     }
 
     @Override
+    public boolean regenerateBiome(Region region, EditSession editSession) {
+        return false;
+    }
+
+    @Override
     public boolean generateTree(TreeType type, EditSession editSession, BlockVector3 position) throws MaxChangedBlocksException {
         return false;
     }

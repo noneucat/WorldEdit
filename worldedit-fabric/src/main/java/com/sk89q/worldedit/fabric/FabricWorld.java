@@ -355,6 +355,44 @@ public class FabricWorld extends AbstractWorld {
         return true;
     }
 
+    @Override
+    public boolean regenerateBiome(Region region, EditSession editSession) {
+        // Don't even try to regen if it's going to fail.
+        ChunkManager provider = getWorld().getChunkManager();
+        if (!(provider instanceof ServerChunkManager)) {
+            return false;
+        }
+
+        File saveFolder = Files.createTempDir();
+        // register this just in case something goes wrong
+        // normally it should be deleted at the end of this method
+        saveFolder.deleteOnExit();
+        try {
+            ServerWorld originalWorld = (ServerWorld) getWorld();
+
+            MinecraftServer server = originalWorld.getServer();
+            WorldSaveHandler saveHandler = new WorldSaveHandler(saveFolder, originalWorld.getSaveHandler().getWorldDir().getName(), server, server.getDataFixer());
+            World freshWorld = new ServerWorld(server, server.getWorkerExecutor(), saveHandler, originalWorld.getLevelProperties(),
+                    originalWorld.dimension.getType(), originalWorld.getProfiler(), new NoOpChunkStatusListener());
+
+            // Pre-gen all the chunks
+            // We need to also pull one more chunk in every direction
+            CuboidRegion expandedPreGen = new CuboidRegion(region.getMinimumPoint().subtract(16, 0, 16), region.getMaximumPoint().add(16, 0, 16));
+            for (BlockVector2 chunk : expandedPreGen.getChunks()) {
+                freshWorld.getChunk(chunk.getBlockX(), chunk.getBlockZ());
+            }
+
+            FabricWorld from = new FabricWorld(freshWorld);
+            for (BlockVector3 vec : region) {
+                editSession.setBiome(BlockVector2.at(vec.getX(), vec.getZ()), from.getBiome(BlockVector2.at(vec.getX(), vec.getZ())));
+            }
+        } finally {
+            saveFolder.delete();
+        }
+
+        return true;
+    }
+
     @Nullable
     private static ConfiguredFeature<?, ?> createTreeFeatureGenerator(TreeType type) {
         switch (type) {

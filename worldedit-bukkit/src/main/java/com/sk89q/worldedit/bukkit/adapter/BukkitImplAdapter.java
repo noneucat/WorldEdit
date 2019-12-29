@@ -202,4 +202,16 @@ public interface BukkitImplAdapter {
     default boolean regenerate(World world, Region region, EditSession session) {
         throw new UnsupportedOperationException("This adapter does not support regeneration.");
     }
+
+     /**
+     * Regenerate a biome region in the given world, so it appears "as new".
+     * @param world the world to regen in
+     * @param region the region to regen
+     * @param session the session to use for setting blocks
+     * @return true on success, false on failure
+     */
+    default boolean regenerateBiome(World world, Region region, EditSession session) {
+        throw new UnsupportedOperationException("This adapter does not support regeneration.");
+    }
+
 }

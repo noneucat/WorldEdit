@@ -424,6 +424,29 @@ public class RegionCommands {
     }
 
     @Command(
+        name = "/regenbiome",
+        desc = "Regenerates the biome of the selection"
+    )
+    @CommandPermissions("worldedit.regen")
+    @Logging(REGION)
+    public void regenerateChunkBiome(Actor actor, World world, LocalSession session,
+            EditSession editSession, @Selection Region region) throws WorldEditException {
+        Mask mask = session.getMask();
+        boolean success;
+        try {
+            session.setMask(null);
+            success = world.regenerateBiome(region, editSession);
+        } finally {
+            session.setMask(mask);
+        }
+        if (success) {
+            actor.printInfo(TranslatableComponent.of("worldedit.regenBiome.regenerated"));
+        } else {
+            actor.printError(TranslatableComponent.of("worldedit.regenBiome.failed"));
+        }
+    }
+
+    @Command(
         name = "/deform",
         desc = "Deforms a selected region with an expression",
         descFooter = "The expression is executed for each block and is expected\n" +
